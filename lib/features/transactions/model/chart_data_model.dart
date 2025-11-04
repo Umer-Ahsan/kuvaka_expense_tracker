@@ -1,5 +1,6 @@
 class ChartData {
-  final String month;
-  final double value;
-  ChartData(this.month, this.value);
+  final String category;
+  final double amount;
+
+  ChartData(this.category, this.amount);
 }

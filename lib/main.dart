@@ -1,3 +1,5 @@
+import 'package:device_preview/device_preview.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:kuvaka_expense_tracker/constants/themes.dart';
@@ -11,15 +13,22 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Hive.initFlutter();
-  Hive.registerAdapter(TransactionAdapter());
-  await Hive.openBox<Transaction>('transactions');
+
+  if (!Hive.isAdapterRegistered(0)) {
+    Hive.registerAdapter(TransactionAdapter());
+  }
+
+  await Hive.openBox<Transaction>(TransactionProvider.boxName);
+
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => TransactionProvider()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
       ],
-      child: const MyApp(),
+      child: kDebugMode
+          ? DevicePreview(enabled: true, builder: (context) => const MyApp())
+          : const MyApp(),
     ),
   );
 }
