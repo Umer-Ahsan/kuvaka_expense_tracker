@@ -1,24 +1,33 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:kuvaka_expense_tracker/constants/colors.dart';
+import 'package:kuvaka_expense_tracker/constants/styles.dart';
+import 'package:kuvaka_expense_tracker/features/transactions/widgets/no_transaction_widget.dart';
+import 'package:kuvaka_expense_tracker/features/transactions/widgets/transaction_tile_widget.dart';
 import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 import '../model/chart_data_model.dart';
-import '../model/transaction_model.dart';
 import '../viewmodel/transaction_provider.dart';
 import '../widgets/add_transaction_sheet.dart';
 import '../../shared/viewmodel/theme_provider.dart';
 
-class TransactionsScreen extends StatelessWidget {
+class TransactionsScreen extends StatefulWidget {
   const TransactionsScreen({super.key});
+
+  @override
+  State<TransactionsScreen> createState() => _TransactionsScreenState();
+}
+
+class _TransactionsScreenState extends State<TransactionsScreen> {
+  final Set<String> _removingIds = {}; // ✅ define to track deleted items
 
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<TransactionProvider>(context);
 
-    // Group totals by category (only expenses for chart or both as you prefer)
     final Map<String, double> categoryTotals = {};
     for (var tx in provider.transactions) {
-      // Only consider expenses in chart, or include income if you prefer
       if (tx.type.toLowerCase() == 'expense') {
         categoryTotals[tx.category] =
             (categoryTotals[tx.category] ?? 0) + tx.amount;
@@ -33,47 +42,57 @@ class TransactionsScreen extends StatelessWidget {
     final balance = provider.currentBalance;
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).primaryColor,
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
           children: [
-            const Text('Transactions'),
-            CupertinoButton(
-              padding: EdgeInsets.zero,
-              child: Text(
-                Provider.of<ThemeProvider>(context).isDarkMode
-                    ? "Light Mode"
-                    : "Dark Mode",
-                style: const TextStyle(color: Colors.white),
+            DrawerHeader(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary,
               ),
-              onPressed: () {
-                context.read<ThemeProvider>().toggleTheme();
-              },
+              child: Text(
+                'Kuvaka Expense Tracker',
+                style: AppStyles.f24w600.copyWith(color: Colors.white),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text("Dark Mode", style: AppStyles.f16w400),
+                  CupertinoSwitch(
+                    value: Provider.of<ThemeProvider>(context).isDarkMode,
+                    activeTrackColor: Colors.white,
+                    inactiveTrackColor: Colors.grey,
+                    onChanged: (_) {
+                      context.read<ThemeProvider>().toggleTheme();
+                    },
+                  ),
+                ],
+              ),
             ),
           ],
         ),
       ),
+      appBar: AppBar(
+        centerTitle: true,
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        title: const Text('Transactions', style: AppStyles.f20w500),
+      ),
       body: provider.transactions.isEmpty
-          ? const Center(child: Text('No transactions yet'))
+          ? const NoTransactionWidget()
           : SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Top gradient header
+                  // ---------- Top Header with Chart ----------
                   Container(
                     width: double.infinity,
                     height: 300,
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Theme.of(context).colorScheme.primary,
-                          Theme.of(context).colorScheme.secondary,
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
+                      color: Theme.of(context).colorScheme.primary,
                       borderRadius: const BorderRadius.only(
                         bottomLeft: Radius.circular(32),
                         bottomRight: Radius.circular(32),
@@ -89,56 +108,58 @@ class TransactionsScreen extends StatelessWidget {
                         children: [
                           Text(
                             "Hi there 👋",
-                            style: Theme.of(context).textTheme.bodyLarge
-                                ?.copyWith(
-                                  color: Colors.white,
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                            style: AppStyles.f20w600.copyWith(
+                              color: Colors.white,
+                            ),
                           ),
                           const SizedBox(height: 8),
                           Text(
                             "Current Balance",
-                            style: TextStyle(color: Colors.white70),
+                            style: AppStyles.f14w400.copyWith(
+                              color: Colors.white70,
+                            ),
                           ),
                           const SizedBox(height: 6),
                           Text(
                             '\$${balance.toStringAsFixed(2)}',
-                            style: const TextStyle(
+                            style: AppStyles.f32w500.copyWith(
                               color: Colors.white,
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
                             ),
                           ),
                           const SizedBox(height: 12),
-                          // Chart area
                           Expanded(
                             child: chartData.isEmpty
-                                ? const Center(
+                                ? Center(
                                     child: Text(
-                                      'Add expenses to see breakdown',
-                                      style: TextStyle(color: Colors.white70),
+                                      'Add expenses to see breakdown graph',
+                                      style: AppStyles.f14w400.copyWith(
+                                        color: Colors.white,
+                                      ),
                                     ),
                                   )
                                 : SingleChildScrollView(
                                     scrollDirection: Axis.horizontal,
                                     child: SizedBox(
-                                      width:
-                                          chartData.length *
-                                          90, // controls scroll width dynamically
+                                      width: chartData.length * 90,
                                       child: SfCartesianChart(
                                         plotAreaBorderWidth: 0,
                                         primaryXAxis: CategoryAxis(
                                           axisLine: const AxisLine(width: 0),
+                                          majorGridLines: const MajorGridLines(
+                                            width: 0,
+                                          ),
+                                          majorTickLines: const MajorTickLines(
+                                            width: 0,
+                                          ),
                                           labelStyle: const TextStyle(
                                             color: Colors.white70,
                                           ),
-                                          labelRotation:
-                                              0, // keep text horizontal
-                                          interval: 1, // show every label
+                                          labelRotation: 0,
+                                          interval: 1,
                                         ),
                                         primaryYAxis: NumericAxis(
                                           isVisible: false,
+                                          axisLine: const AxisLine(width: 0),
                                         ),
                                         series: <CartesianSeries>[
                                           ColumnSeries<ChartData, String>(
@@ -150,7 +171,7 @@ class TransactionsScreen extends StatelessWidget {
                                             borderRadius: BorderRadius.circular(
                                               8,
                                             ),
-                                            width: 0.6,
+                                            width: 0.4,
                                             spacing: 0.3,
                                             color: Colors.white.withOpacity(
                                               0.95,
@@ -166,10 +187,8 @@ class TransactionsScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 20),
-
-                  // Summary card
+                  // ---------- Summary Card ----------
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Container(
@@ -192,16 +211,16 @@ class TransactionsScreen extends StatelessWidget {
                             children: [
                               const Text(
                                 "Total Spending",
-                                style: TextStyle(fontWeight: FontWeight.w600),
+                                style: AppStyles.f14w500,
                               ),
                               const SizedBox(height: 4),
                               Text(
                                 "\$${totalSpending.toStringAsFixed(2)}",
-                                style: Theme.of(context).textTheme.bodyLarge
-                                    ?.copyWith(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                style: AppStyles.f20w600.copyWith(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
+                                ),
                               ),
                             ],
                           ),
@@ -213,73 +232,88 @@ class TransactionsScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 20),
-
-                  // Recent Transactions heading
+                  // ---------- Recent Transactions ----------
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Text(
                       "Recent Transactions",
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
+                      style: AppStyles.f20w500.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                   ),
-
-                  const SizedBox(height: 8),
-
-                  // transactions list
-                  ListView.builder(
+                  const SizedBox(height: 10),
+                  // ---------- Transactions List ----------
+                  ListView.separated(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
                     itemCount: provider.transactions.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 12),
                     itemBuilder: (context, index) {
                       final tx = provider.transactions[index];
-                      return ListTile(
-                        leading: tx.type.toLowerCase() == 'income'
-                            ? const Icon(
-                                Icons.arrow_downward,
-                                color: Colors.green,
-                              )
-                            : const Icon(Icons.arrow_upward, color: Colors.red),
-                        title: Text(tx.description),
-                        subtitle: Text(tx.category),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.end,
+
+                      return Slidable(
+                        key: ValueKey(tx.id),
+                        endActionPane: ActionPane(
+                          motion: const BehindMotion(),
+                          extentRatio: 0.25,
                           children: [
-                            Text(
-                              '\$${tx.amount.toStringAsFixed(2)}',
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.primary,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.delete, color: Colors.red),
-                              onPressed: () async {
+                            CustomSlidableAction(
+                              onPressed: (_) async {
+                                final deletedTx = tx;
                                 await provider.deleteTransaction(tx.id);
+                                if (!context.mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: const Text(
+                                      "Transaction deleted",
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                    backgroundColor: AppColors.primaryColor,
+                                    behavior: SnackBarBehavior.floating,
+                                    duration: const Duration(seconds: 5),
+                                    action: SnackBarAction(
+                                      label: 'Undo',
+                                      textColor: Colors.white,
+                                      onPressed: () async {
+                                        await provider.addTransaction(
+                                          deletedTx,
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                );
                               },
+                              backgroundColor: Colors.redAccent,
+                              borderRadius: BorderRadius.circular(16),
+                              child: const Icon(
+                                Icons.delete,
+                                color: Colors.white,
+                              ),
                             ),
                           ],
                         ),
-                        onTap: () {
-                          // optional: open edit sheet
-                          showModalBottomSheet(
-                            context: context,
-                            isScrollControlled: true,
-                            builder: (_) => AddTransactionSheet(
-                              initialData: tx,
-                              onAddTransaction: (updated) async {
-                                await provider.updateTransaction(updated);
-                              },
-                            ),
-                          );
-                        },
+                        child: TransactionTile(
+                          tx: tx,
+                          onTap: () {
+                            showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              builder: (_) => AddTransactionSheet(
+                                initialData: tx,
+                                onAddTransaction: (updated) async {
+                                  await provider.updateTransaction(updated);
+                                },
+                              ),
+                            );
+                          },
+                        ),
                       );
                     },
                   ),
+
                   const SizedBox(height: 30),
                 ],
               ),

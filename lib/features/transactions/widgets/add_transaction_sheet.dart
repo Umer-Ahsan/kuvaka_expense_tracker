@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:kuvaka_expense_tracker/constants/styles.dart';
+import 'package:kuvaka_expense_tracker/features/shared/view/widgets/custom_button_widget.dart';
+import 'package:kuvaka_expense_tracker/features/transactions/widgets/custom_textFormField.dart';
 import 'package:uuid/uuid.dart';
 import '../model/transaction_model.dart';
 
 class AddTransactionSheet extends StatefulWidget {
   final Function(Transaction) onAddTransaction;
-  final Transaction? initialData; // optional for editing
+  final Transaction? initialData;
 
   const AddTransactionSheet({
     super.key,
@@ -21,7 +24,7 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
   final _descController = TextEditingController();
   final _amountController = TextEditingController();
   String? _selectedCategory;
-  String _selectedType = 'expense';
+  String _selectedType = 'income';
   DateTime _selectedDate = DateTime.now();
 
   final List<String> _categories = [
@@ -110,48 +113,33 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                TextFormField(
-                  controller: _descController,
-                  decoration: const InputDecoration(labelText: 'Description'),
-                  validator: (v) => (v == null || v.trim().isEmpty)
-                      ? 'Enter description'
-                      : null,
-                ),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _amountController,
-                  decoration: const InputDecoration(labelText: 'Amount'),
-                  keyboardType: TextInputType.numberWithOptions(decimal: true),
-                  validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Enter amount';
-                    final parsed = double.tryParse(v);
-                    if (parsed == null || parsed <= 0)
-                      return 'Enter valid amount';
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 8),
-                if (_selectedType == 'expense') ...[
-                  DropdownButtonFormField<String>(
-                    value: _selectedCategory,
-                    decoration: const InputDecoration(labelText: 'Category'),
-                    items: _categories
-                        .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                        .toList(),
-                    onChanged: (v) => setState(() => _selectedCategory = v),
-                    validator: (v) =>
-                        v == null || v.isEmpty ? 'Select category' : null,
-                  ),
-                ] else ...[
-                  const SizedBox(height: 8),
-                ],
-                const SizedBox(height: 8),
                 Row(
                   children: [
                     Expanded(
                       child: DropdownButtonFormField<String>(
-                        value: _selectedType,
-                        decoration: const InputDecoration(labelText: 'Type'),
+                        initialValue: _selectedType,
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: Colors.black.withOpacity(0.03),
+                          hintText: "Type",
+                          hintStyle: AppStyles.f14w400.copyWith(
+                            color: Color(0xFF6B7280),
+                          ),
+                          border: const OutlineInputBorder(
+                            borderRadius: BorderRadius.all(Radius.circular(14)),
+                            borderSide: BorderSide(color: Color(0xF0F0F0F0)),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: const BorderRadius.all(
+                              Radius.circular(14),
+                            ),
+                            borderSide: BorderSide(color: Color(0xF0F0F0F0)),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 18,
+                            horizontal: 18,
+                          ),
+                        ),
                         items: const [
                           DropdownMenuItem(
                             value: 'expense',
@@ -171,7 +159,30 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
                       child: InkWell(
                         onTap: _pickDate,
                         child: InputDecorator(
-                          decoration: const InputDecoration(labelText: 'Date'),
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: Colors.black.withOpacity(0.03),
+                            hintText: "Date",
+                            hintStyle: AppStyles.f14w400.copyWith(
+                              color: Color(0xFF6B7280),
+                            ),
+                            border: const OutlineInputBorder(
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(14),
+                              ),
+                              borderSide: BorderSide(color: Color(0xF0F0F0F0)),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: const BorderRadius.all(
+                                Radius.circular(14),
+                              ),
+                              borderSide: BorderSide(color: Color(0xF0F0F0F0)),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 18,
+                              horizontal: 18,
+                            ),
+                          ),
                           child: Text(
                             '${_selectedDate.toLocal()}'.split(' ')[0],
                           ),
@@ -180,8 +191,64 @@ class _AddTransactionSheetState extends State<AddTransactionSheet> {
                     ),
                   ],
                 ),
+                const SizedBox(height: 12),
+                CustomTextFormField(
+                  labelText: "Description",
+                  controller: _descController,
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Enter description'
+                      : null,
+                ),
+                CustomTextFormField(
+                  labelText: "Amount",
+                  controller: _amountController,
+                  keyboardType: TextInputType.numberWithOptions(decimal: true),
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return 'Enter amount';
+                    final parsed = double.tryParse(v);
+                    if (parsed == null || parsed <= 0) {
+                      return 'Enter valid amount';
+                    }
+                    return null;
+                  },
+                ),
+                if (_selectedType == 'expense') ...[
+                  DropdownButtonFormField<String>(
+                    initialValue: _selectedCategory,
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: Colors.black.withOpacity(0.03),
+                      hintText: "Category",
+                      hintStyle: AppStyles.f14w400.copyWith(
+                        color: Color(0xFF6B7280),
+                      ),
+                      border: const OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(14)),
+                        borderSide: BorderSide(color: Color(0xF0F0F0F0)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: const BorderRadius.all(
+                          Radius.circular(14),
+                        ),
+                        borderSide: BorderSide(color: Color(0xF0F0F0F0)),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        vertical: 18,
+                        horizontal: 18,
+                      ),
+                    ),
+                    items: _categories
+                        .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                        .toList(),
+                    onChanged: (v) => setState(() => _selectedCategory = v),
+                    validator: (v) =>
+                        v == null || v.isEmpty ? 'Select category' : null,
+                  ),
+                ] else ...[
+                  const SizedBox(height: 8),
+                ],
                 const SizedBox(height: 16),
-                ElevatedButton(onPressed: _submit, child: const Text('Save')),
+                CustomButton(text: "Save", onPressed: _submit),
                 const SizedBox(height: 12),
               ],
             ),
