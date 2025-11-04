@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:kuvaka_expense_tracker/constants/colors.dart';
 import 'package:kuvaka_expense_tracker/constants/styles.dart';
+import 'package:kuvaka_expense_tracker/features/budget/view/budget_screen.dart';
+import 'package:kuvaka_expense_tracker/features/budget/viewmodel/budget_provider.dart';
 import 'package:kuvaka_expense_tracker/features/transactions/widgets/no_transaction_widget.dart';
 import 'package:kuvaka_expense_tracker/features/transactions/widgets/transaction_tile_widget.dart';
 import 'package:provider/provider.dart';
@@ -20,8 +22,6 @@ class TransactionsScreen extends StatefulWidget {
 }
 
 class _TransactionsScreenState extends State<TransactionsScreen> {
-  final Set<String> _removingIds = {}; // ✅ define to track deleted items
-
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<TransactionProvider>(context);
@@ -51,27 +51,45 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.primary,
               ),
-              child: Text(
-                'Kuvaka Expense Tracker',
-                style: AppStyles.f24w600.copyWith(color: Colors.white),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text("Dark Mode", style: AppStyles.f16w400),
-                  CupertinoSwitch(
-                    value: Provider.of<ThemeProvider>(context).isDarkMode,
-                    activeTrackColor: Colors.white,
-                    inactiveTrackColor: Colors.grey,
-                    onChanged: (_) {
-                      context.read<ThemeProvider>().toggleTheme();
-                    },
+                  Text(
+                    'Kuvaka Expense Tracker',
+                    style: AppStyles.f24w600.copyWith(color: Colors.white),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "Dark Mode",
+                        style: AppStyles.f16w400.copyWith(color: Colors.white),
+                      ),
+                      CupertinoSwitch(
+                        value: Provider.of<ThemeProvider>(context).isDarkMode,
+                        activeTrackColor: Colors.white,
+                        inactiveTrackColor: Colors.grey,
+                        onChanged: (_) {
+                          context.read<ThemeProvider>().toggleTheme();
+                        },
+                      ),
+                    ],
                   ),
                 ],
               ),
+            ),
+            ListTile(
+              leading: const Icon(
+                Icons.account_balance_wallet,
+                color: AppColors.primaryColor,
+              ),
+              title: const Text('Budgets', style: AppStyles.f16w400),
+              onTap: () {
+                Navigator.of(
+                  context,
+                ).push(MaterialPageRoute(builder: (_) => const BudgetScreen()));
+              },
             ),
           ],
         ),
@@ -137,50 +155,77 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                                       ),
                                     ),
                                   )
-                                : SingleChildScrollView(
-                                    scrollDirection: Axis.horizontal,
-                                    child: SizedBox(
-                                      width: chartData.length * 90,
-                                      child: SfCartesianChart(
-                                        plotAreaBorderWidth: 0,
-                                        primaryXAxis: CategoryAxis(
-                                          axisLine: const AxisLine(width: 0),
-                                          majorGridLines: const MajorGridLines(
-                                            width: 0,
-                                          ),
-                                          majorTickLines: const MajorTickLines(
-                                            width: 0,
-                                          ),
-                                          labelStyle: const TextStyle(
-                                            color: Colors.white70,
-                                          ),
-                                          labelRotation: 0,
-                                          interval: 1,
-                                        ),
-                                        primaryYAxis: NumericAxis(
-                                          isVisible: false,
-                                          axisLine: const AxisLine(width: 0),
-                                        ),
-                                        series: <CartesianSeries>[
-                                          ColumnSeries<ChartData, String>(
-                                            dataSource: chartData,
-                                            xValueMapper: (ChartData data, _) =>
-                                                data.category,
-                                            yValueMapper: (ChartData data, _) =>
-                                                data.amount,
-                                            borderRadius: BorderRadius.circular(
-                                              8,
+                                : Consumer<BudgetProvider>(
+                                    builder: (context, budgetProvider, _) {
+                                      return SingleChildScrollView(
+                                        scrollDirection: Axis.horizontal,
+                                        child: SizedBox(
+                                          width: chartData.length * 90,
+                                          child: SfCartesianChart(
+                                            plotAreaBorderWidth: 0,
+                                            primaryXAxis: CategoryAxis(
+                                              axisLine: const AxisLine(
+                                                width: 0,
+                                              ),
+                                              majorGridLines:
+                                                  const MajorGridLines(
+                                                    width: 0,
+                                                  ),
+                                              majorTickLines:
+                                                  const MajorTickLines(
+                                                    width: 0,
+                                                  ),
+                                              labelStyle: const TextStyle(
+                                                color: Colors.white70,
+                                              ),
+                                              labelRotation: 0,
+                                              interval: 1,
                                             ),
-                                            width: 0.4,
-                                            spacing: 0.3,
-                                            color: Colors.white.withOpacity(
-                                              0.95,
+                                            primaryYAxis: NumericAxis(
+                                              isVisible: false,
+                                              axisLine: const AxisLine(
+                                                width: 0,
+                                              ),
                                             ),
-                                            animationDuration: 500,
+                                            series: <CartesianSeries>[
+                                              ColumnSeries<ChartData, String>(
+                                                dataSource: chartData,
+                                                xValueMapper:
+                                                    (ChartData data, _) =>
+                                                        data.category,
+                                                yValueMapper:
+                                                    (ChartData data, _) =>
+                                                        data.amount,
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                                width: 0.4,
+                                                spacing: 0.3,
+                                                pointColorMapper: (ChartData data, _) {
+                                                  final ratio = budgetProvider
+                                                      .budgetUsageRatio(
+                                                        data.category,
+                                                        data.amount,
+                                                      );
+
+                                                  if (ratio >= 1.0) {
+                                                    return Colors
+                                                        .redAccent; // Over budget
+                                                  } else if (ratio >= 0.8) {
+                                                    return Colors
+                                                        .orangeAccent; // Near limit
+                                                  }
+                                                  return Colors.white
+                                                      .withOpacity(
+                                                        0.9,
+                                                      ); // Normal
+                                                },
+                                                animationDuration: 500,
+                                              ),
+                                            ],
                                           ),
-                                        ],
-                                      ),
-                                    ),
+                                        ),
+                                      );
+                                    },
                                   ),
                           ),
                         ],
