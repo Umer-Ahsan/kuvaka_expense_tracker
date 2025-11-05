@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:kuvaka_expense_tracker/constants/styles.dart';
 import '../model/budget_model.dart';
 
 class BudgetTile extends StatelessWidget {
@@ -48,15 +49,12 @@ class BudgetTile extends StatelessWidget {
                   budget.category,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 15,
-                  ),
+                  style: AppStyles.f15w600,
                 ),
                 const SizedBox(height: 4),
                 Text(
                   "Limit: \$${budget.limit.toStringAsFixed(2)}",
-                  style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                  style: AppStyles.f14w400.copyWith(color: Colors.grey[600]),
                 ),
               ],
             ),

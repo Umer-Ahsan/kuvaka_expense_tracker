@@ -93,8 +93,25 @@ class _AddBudgetSheetState extends State<_AddBudgetSheet> {
           const Center(child: Text("Add Budget", style: AppStyles.f20w500)),
           const SizedBox(height: 16),
           DropdownButtonFormField<String>(
-            value: _selectedCategory,
-            decoration: const InputDecoration(labelText: "Category"),
+            initialValue: _selectedCategory,
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: Colors.black.withOpacity(0.03),
+              hintText: "Category",
+              hintStyle: AppStyles.f14w400.copyWith(color: Color(0xFF6B7280)),
+              border: const OutlineInputBorder(
+                borderRadius: BorderRadius.all(Radius.circular(14)),
+                borderSide: BorderSide(color: Color(0xF0F0F0F0)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: const BorderRadius.all(Radius.circular(14)),
+                borderSide: BorderSide(color: Color(0xF0F0F0F0)),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                vertical: 18,
+                horizontal: 18,
+              ),
+            ),
             items: _categories.map((category) {
               return DropdownMenuItem(value: category, child: Text(category));
             }).toList(),
