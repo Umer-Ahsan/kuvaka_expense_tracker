@@ -84,82 +84,104 @@ class _AddBudgetSheetState extends State<_AddBudgetSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Center(child: Text("Add Budget", style: AppStyles.f20w500)),
-          const SizedBox(height: 16),
-          DropdownButtonFormField<String>(
-            initialValue: _selectedCategory,
-            decoration: InputDecoration(
-              filled: true,
-              fillColor: Colors.black.withOpacity(0.03),
-              hintText: "Category",
-              hintStyle: AppStyles.f14w400.copyWith(color: Color(0xFF6B7280)),
-              border: const OutlineInputBorder(
-                borderRadius: BorderRadius.all(Radius.circular(14)),
-                borderSide: BorderSide(color: Color(0xF0F0F0F0)),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: const BorderRadius.all(Radius.circular(14)),
-                borderSide: BorderSide(color: Color(0xF0F0F0F0)),
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                vertical: 18,
-                horizontal: 18,
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    final inputFillColor = isDark
+        ? Colors.white.withOpacity(0.05)
+        : Colors.black.withOpacity(0.03);
+
+    return Container(
+      color: theme.scaffoldBackgroundColor,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Text(
+                "Add Budget",
+                style: AppStyles.f20w500.copyWith(
+                  color: theme.textTheme.bodyLarge?.color,
+                ),
               ),
             ),
-            items: _categories.map((category) {
-              return DropdownMenuItem(value: category, child: Text(category));
-            }).toList(),
-            onChanged: (value) {
-              setState(() {
-                _selectedCategory = value;
-              });
-            },
-          ),
-          const SizedBox(height: 12),
-          CustomTextFormField(
-            labelText: "Limit Amount",
-            controller: _limitController,
-            keyboardType: TextInputType.number,
-          ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(
-                child: TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text("Cancel"),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              initialValue: _selectedCategory,
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: inputFillColor,
+                hintText: "Category",
+                hintStyle: AppStyles.f14w400.copyWith(color: theme.hintColor),
+                border: OutlineInputBorder(
+                  borderRadius: const BorderRadius.all(Radius.circular(14)),
+                  borderSide: BorderSide(color: theme.dividerColor),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: const BorderRadius.all(Radius.circular(14)),
+                  borderSide: BorderSide(color: theme.dividerColor),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 18,
+                  horizontal: 18,
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: CustomButton(
-                  text: "Save",
-                  onPressed: () async {
-                    final id = const Uuid().v4();
-                    final category = _selectedCategory;
-                    final limit =
-                        double.tryParse(_limitController.text.trim()) ?? 0;
-
-                    if (category != null && limit > 0) {
-                      await widget.provider.addBudget(
-                        Budget(id: id, category: category, limit: limit),
-                      );
-                      if (context.mounted) Navigator.pop(context);
-                    }
-                  },
+              items: _categories
+                  .map(
+                    (category) =>
+                        DropdownMenuItem(value: category, child: Text(category)),
+                  )
+                  .toList(),
+              onChanged: (value) {
+                setState(() {
+                  _selectedCategory = value;
+                });
+              },
+            ),
+            const SizedBox(height: 12),
+            CustomTextFormField(
+              labelText: "Limit Amount",
+              controller: _limitController,
+              keyboardType: TextInputType.number,
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text(
+                      "Cancel",
+                      style: TextStyle(color: theme.colorScheme.primary),
+                    ),
+                  ),
                 ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 8),
-        ],
+                const SizedBox(width: 12),
+                Expanded(
+                  child: CustomButton(
+                    text: "Save",
+                    onPressed: () async {
+                      final id = const Uuid().v4();
+                      final category = _selectedCategory;
+                      final limit =
+                          double.tryParse(_limitController.text.trim()) ?? 0;
+      
+                      if (category != null && limit > 0) {
+                        await widget.provider.addBudget(
+                          Budget(id: id, category: category, limit: limit),
+                        );
+                        if (context.mounted) Navigator.pop(context);
+                      }
+                    },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
       ),
     );
   }
